@@ -6,11 +6,13 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.absoluteOffset
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
@@ -18,11 +20,15 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material3.Button
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -38,10 +44,13 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import com.ad4lb3rt.displayit.ui.theme.DisplayItTheme
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+
 
 class MainActivity : ComponentActivity()
 {
-    val TEXT = "Sample Text!"
 
     override fun onCreate(savedInstanceState: Bundle?)
     {
@@ -49,6 +58,7 @@ class MainActivity : ComponentActivity()
         enableEdgeToEdge()
         setContent {
             DisplayItTheme {
+                var displayText by rememberSaveable { mutableStateOf("Sample Text!") }
                 val configuration = LocalConfiguration.current
                 val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
                 val insetsController = WindowCompat.getInsetsController(window, window.decorView)
@@ -72,7 +82,8 @@ class MainActivity : ComponentActivity()
                 {
 
                     if (!isLandscape) {
-                        DisplayText(TEXT)
+                        DisplayTextField(displayText,
+                            onValueChange = { displayText = it })
                         Box(
                             modifier = Modifier
                                 .fillMaxSize()
@@ -89,7 +100,7 @@ class MainActivity : ComponentActivity()
                         }
                     } else {
                         DisplayClickableText(
-                            text = TEXT,
+                            text = displayText,
                             onClick = {
                                 requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
                             },
@@ -103,19 +114,29 @@ class MainActivity : ComponentActivity()
     }
 
     @Composable
-    fun DisplayText(text: String, modifier: Modifier = Modifier)
+    fun DisplayTextField(text: String, onValueChange: (String) -> Unit)
     {
         Surface(color = MaterialTheme.colorScheme.background)
         {
-            Text(
-                color = MaterialTheme.colorScheme.primary,
-                text = text,
-                textAlign = TextAlign.Center,
-                fontSize = 40.sp,
-                modifier = modifier
-                    .padding(24.dp)
-                    .fillMaxSize()
+            TextField(
+                value = text,
+                onValueChange = onValueChange,
+                textStyle = LocalTextStyle.current.copy(
+                    textAlign = TextAlign.Center,
+                    fontSize = 40.sp
+                ),
+                colors = TextFieldDefaults.colors(
+                    unfocusedTextColor = MaterialTheme.colorScheme.primary,
+                    focusedTextColor = MaterialTheme.colorScheme.primary,
+                    unfocusedContainerColor = Color.Transparent,
+                    focusedContainerColor = Color.Transparent,
+                    unfocusedIndicatorColor = Color.Transparent,
+                    focusedIndicatorColor = Color.Transparent
+                ),
+                modifier = Modifier
+                    .fillMaxHeight()
                     .wrapContentHeight(align = Alignment.CenterVertically)
+                    .padding(40.dp)
             )
         }
     }
@@ -149,7 +170,7 @@ class MainActivity : ComponentActivity()
     fun GreetingPreview()
     {
         DisplayItTheme{
-            DisplayText(TEXT)
+            DisplayTextField("Sample Text!") {}
             Box(modifier = Modifier.fillMaxSize())
             {
                 Button(onClick = {
