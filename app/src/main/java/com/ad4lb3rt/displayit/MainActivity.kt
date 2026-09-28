@@ -1,20 +1,18 @@
 package com.ad4lb3rt.displayit
 
+import android.annotation.SuppressLint
 import android.content.pm.ActivityInfo
-import android.content.res.Configuration
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.absoluteOffset
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.wrapContentHeight
@@ -33,11 +31,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.view.WindowCompat
@@ -47,11 +42,13 @@ import com.ad4lb3rt.displayit.ui.theme.DisplayItTheme
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.unit.em
 
 
 class MainActivity : ComponentActivity()
 {
 
+    @SuppressLint("SourceLockedOrientationActivity")
     override fun onCreate(savedInstanceState: Bundle?)
     {
         super.onCreate(savedInstanceState)
@@ -59,14 +56,11 @@ class MainActivity : ComponentActivity()
         setContent {
             DisplayItTheme {
                 var displayText by rememberSaveable { mutableStateOf("Sample Text!") }
-                val configuration = LocalConfiguration.current
-                val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+                var isDisplaying by rememberSaveable { mutableStateOf(false) }
                 val insetsController = WindowCompat.getInsetsController(window, window.decorView)
-                val screenWidth = LocalWindowInfo.current.containerSize.width
-                val screenHeight = LocalWindowInfo.current.containerSize.height
 
-                LaunchedEffect(isLandscape) {
-                    if (isLandscape) {
+            LaunchedEffect(isDisplaying) {
+                    if (isDisplaying) {
                         insetsController.hide(WindowInsetsCompat.Type.systemBars())
                         insetsController.systemBarsBehavior =
                             WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
@@ -81,31 +75,20 @@ class MainActivity : ComponentActivity()
                 )
                 {
 
-                    if (!isLandscape) {
+                    if (!isDisplaying) {
                         DisplayTextField(displayText,
                             onValueChange = { displayText = it })
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .windowInsetsPadding(WindowInsets.safeDrawing)
-                        ) {
-                            Button(
-                                onClick = {
-                                    requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
-                                },
-                                modifier = Modifier.align(Alignment.TopEnd)
-                            ) {
-                                Text(text = "Show")
-                            }
-                        }
+                        ShowButton(onClick = {
+                            requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_FULL_SENSOR
+                            isDisplaying = true
+                        })
                     } else {
                         DisplayClickableText(
                             text = displayText,
                             onClick = {
                                 requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
-                            },
-                            screenWidthSp = screenWidth.sp,
-                            screenHeightSp = screenHeight.sp
+                                isDisplaying = false
+                            }
                         )
                     }
                 }
@@ -116,14 +99,15 @@ class MainActivity : ComponentActivity()
     @Composable
     fun DisplayTextField(text: String, onValueChange: (String) -> Unit)
     {
-        Surface(color = MaterialTheme.colorScheme.background)
+        Box(modifier = Modifier.fillMaxSize())
         {
             TextField(
                 value = text,
                 onValueChange = onValueChange,
                 textStyle = LocalTextStyle.current.copy(
                     textAlign = TextAlign.Center,
-                    fontSize = 40.sp
+                    fontSize = 40.sp,
+                    lineHeight = 1.em
                 ),
                 colors = TextFieldDefaults.colors(
                     unfocusedTextColor = MaterialTheme.colorScheme.primary,
@@ -134,17 +118,16 @@ class MainActivity : ComponentActivity()
                     focusedIndicatorColor = Color.Transparent
                 ),
                 modifier = Modifier
+                    .align(Alignment.Center)
                     .fillMaxHeight()
                     .wrapContentHeight(align = Alignment.CenterVertically)
-                    .padding(40.dp)
             )
         }
     }
 
     @Composable
     fun DisplayClickableText(text: String, modifier: Modifier = Modifier,
-                             onClick: () -> Unit = {},
-                             screenWidthSp: TextUnit, screenHeightSp: TextUnit)
+                             onClick: () -> Unit = {})
     {
         val interactionSource = remember { MutableInteractionSource() }
         Surface(color = Color.Transparent)
@@ -155,6 +138,7 @@ class MainActivity : ComponentActivity()
                 textAlign = TextAlign.Center,
                 autoSize = TextAutoSize.StepBased(
                 ),
+                lineHeight = 1.em,
                 modifier = modifier
                     .clickable(interactionSource = interactionSource, indication = null) {
                         onClick()
@@ -165,25 +149,30 @@ class MainActivity : ComponentActivity()
         }
     }
 
+    @Composable
+    fun ShowButton(onClick: () -> Unit)
+    {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .windowInsetsPadding(WindowInsets.safeDrawing)
+        ) {
+            Button(
+                onClick = onClick,
+                modifier = Modifier.align(Alignment.TopEnd).offset((-15).dp, 0.dp)
+            ) {
+                Text(text = "Show")
+            }
+        }
+    }
+
     @Preview(showBackground = true)
     @Composable
     fun GreetingPreview()
     {
         DisplayItTheme{
             DisplayTextField("Sample Text!") {}
-            Box(modifier = Modifier.fillMaxSize())
-            {
-                Button(onClick = {
-                    requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
-                },
-                    modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .absoluteOffset(x = (-10).dp, y = 10.dp)
-                )
-                {
-                    Text(text = "Show")
-                }
-            }
+            ShowButton {}
         }
     }
 }
