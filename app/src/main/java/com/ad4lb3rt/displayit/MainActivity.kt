@@ -12,6 +12,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.windowInsetsPadding
@@ -55,7 +57,7 @@ class MainActivity : ComponentActivity()
         enableEdgeToEdge()
         setContent {
             DisplayItTheme {
-                var displayText by rememberSaveable { mutableStateOf("Sample Text!") }
+                var displayText by rememberSaveable { mutableStateOf("") }
                 var isDisplaying by rememberSaveable { mutableStateOf(false) }
                 val insetsController = WindowCompat.getInsetsController(window, window.decorView)
 
@@ -76,7 +78,7 @@ class MainActivity : ComponentActivity()
                 {
 
                     if (!isDisplaying) {
-                        DisplayTextField(displayText,
+                        DisplayTextField(displayText, "Write here...",
                             onValueChange = { displayText = it })
                         ShowButton(onClick = {
                             requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_FULL_SENSOR
@@ -97,12 +99,18 @@ class MainActivity : ComponentActivity()
     }
 
     @Composable
-    fun DisplayTextField(text: String, onValueChange: (String) -> Unit)
+    fun DisplayTextField(displayText: String, placeholderText: String, onValueChange: (String) -> Unit)
     {
         Box(modifier = Modifier.fillMaxSize())
         {
             TextField(
-                value = text,
+                value=displayText,
+                placeholder = { Text(
+                    text=placeholderText,
+                    fontSize = 40.sp,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth().wrapContentHeight(align = Alignment.CenterVertically)
+                )},
                 onValueChange = onValueChange,
                 textStyle = LocalTextStyle.current.copy(
                     textAlign = TextAlign.Center,
@@ -130,21 +138,20 @@ class MainActivity : ComponentActivity()
                              onClick: () -> Unit = {})
     {
         val interactionSource = remember { MutableInteractionSource() }
-        Surface(color = Color.Transparent)
+        Box(contentAlignment = Alignment.Center,
+            modifier = Modifier
+                .fillMaxSize()
+                .clickable(interactionSource = interactionSource, indication = null) {
+                onClick()
+            },
+            )
         {
             Text(
                 color = MaterialTheme.colorScheme.primary,
                 text = text,
                 textAlign = TextAlign.Center,
-                autoSize = TextAutoSize.StepBased(
-                ),
-                lineHeight = 1.em,
-                modifier = modifier
-                    .clickable(interactionSource = interactionSource, indication = null) {
-                        onClick()
-                    }
-                    .fillMaxSize()
-                    .wrapContentHeight(align = Alignment.CenterVertically)
+                autoSize = TextAutoSize.StepBased(maxFontSize = 428.sp, minFontSize = 1.sp, stepSize = (0.1).sp),
+                lineHeight = 1.em
             )
         }
     }
@@ -171,7 +178,7 @@ class MainActivity : ComponentActivity()
     fun GreetingPreview()
     {
         DisplayItTheme{
-            DisplayTextField("Sample Text!") {}
+            DisplayTextField("", "Write here...") {}
             ShowButton {}
         }
     }
